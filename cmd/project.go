@@ -100,7 +100,6 @@ func init() {
 }
 
 func projectCreate(c TfxClientContext, name string, organization string, description string) error {
-	o.AddMessageUserProvided("Organization:", organization)
 	o.AddMessageUserProvided("Create Project:", name)
 	project, err := c.Client.Projects.Create(c.Context, organization, tfe.ProjectCreateOptions{
 		Name:        name,
