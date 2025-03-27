@@ -68,6 +68,21 @@ var (
 			}
 		},
 	}
+
+	// `tfx project create` command
+	projectCreateCmd = &cobra.Command{
+		Use:     "create",
+		Short:   "Create Project",
+		Long:    "Create a project in a TFx Organization.",
+		Example: `tfx project create --name "my-project" --description "my project description"`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return projectCreate(
+				getTfxClientContext(),
+				*viperString("name"),
+				getTfxClientContext().OrganizationName,
+				*viperString("description"))
+		},
+	}
 )
 
 func init() {
@@ -75,9 +90,29 @@ func init() {
 	projectListCmd.Flags().StringP("search", "s", "", "Search string for Project Name (optional).")
 	projectListCmd.Flags().BoolP("all", "a", false, "List All Organizations Projects (optional).")
 
+	// `tfx project create`
+	projectCreateCmd.Flags().StringP("name", "n", "", "Project Name (required)")
+	projectCreateCmd.Flags().StringP("description", "d", "", "Project Description (optional)")
+
 	rootCmd.AddCommand(projectCmd)
 	projectCmd.AddCommand(projectListCmd)
+	projectCmd.AddCommand(projectCreateCmd)
+}
 
+func projectCreate(c TfxClientContext, name string, organization string, description string) error {
+	o.AddMessageUserProvided("Create Project:", name)
+	project, err := c.Client.Projects.Create(c.Context, organization, tfe.ProjectCreateOptions{
+		Name:        name,
+		Description: &description,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to create project")
+	}
+
+	o.AddTableHeader("Name", "Id", "Description")
+	o.AddTableRows(project.Name, project.ID, project.Description)
+
+	return nil
 }
 
 func projectListAll(c TfxClientContext, searchString string) error {
